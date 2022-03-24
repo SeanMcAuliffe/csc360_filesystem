@@ -5,6 +5,7 @@ typedef struct __attribute((__packed__)) superblock_t {
     uint16_t block_size;
     uint32_t file_system_block_count;
     uint32_t fat_start_block;
+    uint32_t fat_block_count;
     uint32_t root_dir_start_block;
     uint32_t root_dir_block_count;
 } superblock_t;
