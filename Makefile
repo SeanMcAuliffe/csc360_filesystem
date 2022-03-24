@@ -2,27 +2,29 @@
 # Sean McAuliffe, V00913346
 # April 1, 2022
 
+# Compiler
+CC = cc
+
 # Compiler flags
 CFLAGS = -Wall -std=c99
 
 # Executable name
-BIN = diskinfo
-
-# Modules
-OBJS = 
+BIN = diskinfo disklist
 
 # External libraries
-LIBS = -lreadline -lpthread
+LIBS = 
 
 # Defines
-DEFS = -D_DEFAULT_SOURCE
+DEFS =
 
 .PHONY all:
-all: $(BIN)
+all: diskinfo disklist
 
-# This default rule compiles the executable program
-$(BIN): $(OBJS) $(BIN).c
-	$(CC) $(CFLAGS) $(DEFS) $(OBJS) $(BIN).c $(LIBS) -o $(BIN)
+diskinfo: diskinfo.o
+	$(CC) $(CFLAGS) $(DEFS) diskinfo.c $(LIBS) -o diskinfo
+
+disklist: disklist.o
+	$(CC) $(CFLAGS) $(DEFS) disklist.c $(LIBS) -o disklist
 
 # Compile all modules
 %.o: %.c %.h
