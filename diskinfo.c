@@ -1,3 +1,10 @@
+/* CSC 360 - Programming Assignment 3
+* Simple File System
+* Sean McAuliffe, V00913346
+* April 4, 2022
+* PART I: Disk Info 
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -5,10 +12,9 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
-#include <netinet/in.h>
+#include <arpa/inet.h>
 #include "fat_types.h"
 
-#define MAX_LINE 256
 
 // struct stat { 
 // dev_t     st_dev;     /* ID of device containing file */ 
@@ -78,7 +84,7 @@ int main(int argc, char* argv[]) {
     printf("Block count: %d\n", blockCount);
     printf("FAT starts: %d\n", fatStartBlock);
     printf("FAT blocks: %d\n", fatBlockCount);
-    printf("Root direction start: %d\n", rootStartBlock);
+    printf("Root directory start: %d\n", rootStartBlock);
     printf("Root directory blocks: %d\n", rootBlockCount);
     printf("\nFAT information:\n");
     printf("Free Blocks: %d\n", available);
