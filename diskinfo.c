@@ -67,7 +67,7 @@ int main(int argc, char* argv[]) {
     uint16_t reserved = 0;
     uint16_t allocated = 0;
     
-    for (void* p = startAddress; p < endAddress; p+=4) {
+    for (void* p = startAddress; p < endAddress; p += FAT_ENTRY_BYTES) {
         uint32_t* status = (uint32_t*) p;
         if (ntohl(*status) == 0) {
             available++;
@@ -91,7 +91,7 @@ int main(int argc, char* argv[]) {
     printf("Reserved Blocks: %d\n", reserved);
     printf("Allocated Blocks: %d\n", allocated);
 
-    munmap(address,buffer.st_size);
+    munmap(address, buffer.st_size);
     close(fd);
 
     return EXIT_SUCCESS; 

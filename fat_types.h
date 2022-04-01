@@ -1,5 +1,8 @@
 #include <stdint.h>
 
+#define FAT_ENTRY_BYTES 4
+#define DIR_ENTRY_BYTES 64
+
 typedef struct __attribute((__packed__)) superblock_t {
     uint8_t fs_id[8];
     uint16_t block_size;
