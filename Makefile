@@ -9,7 +9,7 @@ CC = cc
 CFLAGS = -Wall -std=gnu99
 
 # Executable name
-BIN = diskinfo disklist diskget
+BIN = diskinfo disklist diskget diskput
 
 # External libraries
 LIBS = 
@@ -18,7 +18,7 @@ LIBS =
 DEFS =
 
 .PHONY all:
-all: diskinfo disklist diskget
+all: diskinfo disklist diskget diskput
 
 diskinfo: diskinfo.o
 	$(CC) $(CFLAGS) $(DEFS) diskinfo.c $(LIBS) -o diskinfo
@@ -28,6 +28,10 @@ disklist: disklist.o
 
 diskget: diskget.o
 	$(CC) $(CFLAGS) $(DEFS) diskget.c $(LIBS) -o diskget
+
+diskput: diskput.o
+	$(CC) $(CFLAGS) $(DEFS) diskput.c $(LIBS) -o diskput
+
 
 # Compile all modules
 %.o: %.c %.h
