@@ -15,7 +15,7 @@
 #include <sys/mman.h>
 #include <arpa/inet.h>
 #include "fat_types.h"
-
+#include <string.h>
 
 int main(int argc, char* argv[]) {
 
@@ -37,7 +37,6 @@ int main(int argc, char* argv[]) {
     struct superblock_t* sb = (struct superblock_t*) address;
 
     // Scan to beginning of root directory
-    //fseek(fp, sb->root_dir_start_block * sb->block_size, SEEK_SET);
     void* ptr = (address) + (ntohl(sb->root_dir_start_block) * ntohs(sb->block_size));
     void* endAddress = address + (ntohl(sb->root_dir_start_block) * ntohs(sb->block_size)) +
                                  (ntohl(sb->root_dir_block_count) * ntohs(sb->block_size));
@@ -45,9 +44,8 @@ int main(int argc, char* argv[]) {
     int available = 0;
     int file = 0;
     int directory = 0;
-    int i = 0;
+
     while (ptr < endAddress) {
-        //printf("Loop: %d\n", i);
         dir_entry_t* entry = (dir_entry_t*) ptr;
         dir_entry_timedate_t* createTime = &entry->create_time;
 
@@ -77,14 +75,15 @@ int main(int argc, char* argv[]) {
                 return EXIT_FAILURE;
             }
 
+            int padding = 30 - strlen((char*)entry->filename);
+
             printf("%10d ", ntohl(entry->size));
-            printf("%s ", entry->filename);
-            printf("%d/%d/%d %d:%d:%d\n", ntohs(createTime->year), createTime->month, createTime->day,
+            printf("%*s%s ", padding, "", entry->filename);
+            printf("%04d/%02d/%02d %02d:%02d:%02d\n", ntohs(createTime->year), createTime->month, createTime->day,
                                         createTime->hour, createTime->minute, createTime->second);
         }
 
         ptr += DIR_ENTRY_BYTES;
-        i++;
     }
 
     munmap(address, buffer.st_size);
