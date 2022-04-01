@@ -44,13 +44,13 @@ int main(int argc, char* argv[]) {
     struct stat buffer;
     int status = fstat(fd, &buffer);
     if (status == -1) {
-        printf("fstat error\n");
+        printf("fstat() error, unable to read supplied file.\n");
         return EXIT_FAILURE;
     }
 
     // Map input .dmg file to virtual memory
     void* address = mmap(NULL, buffer.st_size, PROT_READ, MAP_SHARED, fd, 0);
-    struct superblock_t* sb = (struct superblock_t*) address;
+    superblock_t* sb = (struct superblock_t*) address;
 
     uint32_t blockCount = ntohl(sb->file_system_block_count);
     uint16_t blockSize = ntohs(sb->block_size);

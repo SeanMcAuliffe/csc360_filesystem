@@ -28,13 +28,13 @@ int main(int argc, char* argv[]) {
     struct stat buffer;
     int status = fstat(fd, &buffer);
     if (status == -1) {
-        printf("fstat error\n");
+        printf("fstat() error, unable to read supplied file.\n");
         return EXIT_FAILURE;
     }
 
     // Map input .dmg file to virtual memory
     void* address = mmap(NULL, buffer.st_size, PROT_READ, MAP_SHARED, fd, 0);
-    struct superblock_t* sb = (struct superblock_t*) address;
+    superblock_t* sb = (struct superblock_t*) address;
 
     // Scan to beginning of root directory
     void* ptr = (address) + (ntohl(sb->root_dir_start_block) * ntohs(sb->block_size));
