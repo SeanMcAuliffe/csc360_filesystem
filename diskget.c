@@ -79,6 +79,11 @@ int main(int argc, char* argv[]) {
         index++;
     }
 
+    if (fileStartingBlock == -1) {
+        printf("Error: no file could be found at: %s\n", argv[2]);
+        return EXIT_FAILURE;
+    }
+
     // Pointer to the start of the FAT, pointer to current file block
     void* ptrFAT = address + (startFAT*blockSize) + (fileStartingBlock*FAT_ENTRY_BYTES);
     void* ptrFDT = address + (fileStartingBlock*blockSize);
