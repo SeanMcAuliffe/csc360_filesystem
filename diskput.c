@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
     FILE* in = fdopen(input_filed, "rb");
     
     if (in == NULL) {
-        printf("Error: Could not open file: %s\n", argv[2]);
+        printf("File not found.\n");
         return EXIT_FAILURE;
     }
 
