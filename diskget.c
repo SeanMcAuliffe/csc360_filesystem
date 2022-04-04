@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
     uint32_t startRoot = ntohl(sb->root_dir_start_block);
     uint32_t countRoot = ntohl(sb->root_dir_block_count);
 
-    FILE* out = fopen(argv[3], "wb");
+    
     FILE* fp = fdopen(fd, "rb");
     uint8_t fileBlock[blockSize];
 
@@ -80,10 +80,12 @@ int main(int argc, char* argv[]) {
     }
 
     if (fileStartingBlock == -1) {
-        printf("Error: no file could be found at: %s\n", argv[2]);
+        printf("File not found.\n");
         return EXIT_FAILURE;
     }
 
+    FILE* out = fopen(argv[3], "wb");
+    
     // Pointer to the start of the FAT, pointer to current file block
     void* ptrFAT = address + (startFAT*blockSize) + (fileStartingBlock*FAT_ENTRY_BYTES);
     void* ptrFDT = address + (fileStartingBlock*blockSize);
