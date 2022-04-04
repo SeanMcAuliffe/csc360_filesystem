@@ -20,16 +20,22 @@
 
 uint32_t FAT_ENTRIES[8056];
 uint32_t NUM_ENTRIES = 0;
+uint8_t NEW_ENTRY[4];
 
 
+/* Function which marks a specified FAT entry with a given value. This is 
+*   used when inserting new files into the .dmg, so that the chain of next
+*   blocks can be added to the FAT.
+*/
 void markFAT(void* fatStart, uint32_t entry, uint16_t blockSize, uint32_t value) {
     void* p = fatStart + (entry*FAT_ENTRY_BYTES);
-    //uint32_t* temp = (uint32_t*) p;
-    memcpy(p, &value, FAT_ENTRY_BYTES);
-    //*temp = value;
+    *(uint32_t*)p = htonl(value);
 }
 
 
+/* Function which scans the FAT and returns the index of the next
+*    unallocated entry.
+*/
 int getNextFreeBlock(void* fatStart, uint32_t fatBlockCount, uint16_t blockSize){
     void* p = fatStart;
     void* fatEnd = fatStart + (fatBlockCount*blockSize);
@@ -39,7 +45,7 @@ int getNextFreeBlock(void* fatStart, uint32_t fatBlockCount, uint16_t blockSize)
         uint32_t* status = (uint32_t*) p;
         //printf("Status is: %d\n", ntohl(*status));
         if (ntohl(*status) == 0) {
-            markFAT(fatStart, currentBlock, blockSize, 0xABCDEF);
+            markFAT(fatStart, currentBlock, blockSize, 0xEE);
             return currentBlock;
         }
         currentBlock++;
@@ -54,6 +60,7 @@ int main(int argc, char* argv[]) {
     struct stat imageInfo;
     struct stat fileInfo;
     uint32_t directory_entry = -1;
+    uint32_t starting_block = -1;
     uint32_t index_count = 0;
 
     
@@ -76,8 +83,6 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
-    // printf("Input file: %s\n", argv[2]);
-    // return 0;
     int input_filed = open(argv[2], O_RDONLY);
     rc = fstat(input_filed, &fileInfo);
     FILE* in = fdopen(input_filed, "rb");
@@ -128,10 +133,7 @@ int main(int argc, char* argv[]) {
     // Helpful markers
     void* startDIR_ptr = address + (startRoot*blockSize);
     void* endDIR_ptr = startDIR_ptr + (countRoot*blockSize);
-
     void* startFAT_ptr = address + (startFAT*blockSize);
-    //void* endFAT_ptr = startFAT_ptr + (countFAT*blockSize);
-
 
     // Is there space for a new directory entry?
     void* temp_ptr = startDIR_ptr;
@@ -146,12 +148,14 @@ int main(int argc, char* argv[]) {
         temp_ptr += DIR_ENTRY_BYTES;
     }
 
+    // If there is no space, exit
     if (directory_entry == -1){
         printf("Could not find space in the specified directory.\n");
         return EXIT_FAILURE;
     }
 
-    // Insert Directory Entry
+    // Otherwise, insert the new Directory Entry
+    starting_block = getNextFreeBlock(startFAT_ptr, countFAT, blockSize);
     dir_entry_t newDirectoryEntry;
     dir_entry_timedate_t createTime;
     dir_entry_timedate_t modifyTime;
@@ -168,7 +172,7 @@ int main(int argc, char* argv[]) {
     modifyTime.minute = 30;
     modifyTime.second = 00;
     newDirectoryEntry.status = 0b00000011;
-    newDirectoryEntry.starting_block = htonl(getNextFreeBlock(startFAT_ptr, countFAT, blockSize));
+    newDirectoryEntry.starting_block = htonl(starting_block);
     newDirectoryEntry.block_count = htonl(numberOfRequiredBlocks);
     newDirectoryEntry.size = htonl(fileInfo.st_size);
     newDirectoryEntry.create_time = createTime;
@@ -182,44 +186,38 @@ int main(int argc, char* argv[]) {
     memcpy(temp_ptr, &newDirectoryEntry, sizeof(newDirectoryEntry));
 
     // Copy the input file into the .dmg file block by block
-    // Update FAT along the way
+    int loop = 0;
     int freeBlockNumber = -1;
-    //int previousFATEntry = -1;
     uint8_t fileBuffer[blockSize];
     void* ptrFDT = address + (startRoot*blockSize);
     ptrFAT = address + (startFAT*blockSize);
+
     for (int i = 0; i < numberOfRequiredBlocks; i++) {
         rc = fread(fileBuffer, blockSize, 1, in);
-        freeBlockNumber = getNextFreeBlock(ptrFAT, countFAT, blockSize);
+        if (loop == 0) {
+            freeBlockNumber = starting_block;
+            loop++;
+        } else {
+            freeBlockNumber = getNextFreeBlock(ptrFAT, countFAT, blockSize);
+        }
         FAT_ENTRIES[NUM_ENTRIES] = freeBlockNumber;
         NUM_ENTRIES++;
-        printf("Adding %d to fat entries, number of entries now %d\n", freeBlockNumber, NUM_ENTRIES);
-        printf("The next free block is: %d\n", freeBlockNumber);
         if (freeBlockNumber == -1) {
             printf("Something went wrong. Could not find free block in FAT.\n");
             return EXIT_FAILURE;
         }
         ptrFDT = address + (freeBlockNumber*blockSize);
-        printf("Copying next block to address: %lx\n", (ptrFDT-address));
         memcpy(ptrFDT, fileBuffer, blockSize);
 
-        // Mark previous FAT entry with current fat entry
-        // if (previousFATEntry != -1) {
-        //     markFAT(startFAT_ptr, previousFATEntry, blockSize, freeBlockNumber);
-        // }
-        //previousFATEntry = freeBlockNumber;
         freeBlockNumber = -1;
     }
 
+    // Mark the next block at each FAT entry
     for (int k = 0; k < NUM_ENTRIES - 1; k++) {
         markFAT(startFAT_ptr, FAT_ENTRIES[k], blockSize, FAT_ENTRIES[k+1]);
     }
     // Mark End of File in FAT
-    markFAT(startFAT_ptr, FAT_ENTRIES[NUM_ENTRIES], blockSize, 0xFFFFFFFF);
-
-    // if (rc != 0) {
-    //     printf("We did not reach EOF on input stream.\n");
-    // }
+    markFAT(startFAT_ptr, FAT_ENTRIES[NUM_ENTRIES-1], blockSize, -1);
 
     return EXIT_SUCCESS;
 }
